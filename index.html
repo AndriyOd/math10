@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="de">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Trainer Auswahl</title>
+
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0078d7;
+            color: white;
+            padding: 10px 20px;
+        }
+
+        #lang-switch span {
+            cursor: pointer;
+            opacity: .6;
+            font-weight: bold;
+        }
+
+        #lang-switch .active {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 60px);
+        }
+
+        .menu {
+            background: white;
+            padding: 40px;
+            border-radius: 14px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, .1);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            width: 320px;
+        }
+
+        .btn {
+            padding: 22px;
+            font-size: 24px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: #0078d7;
+            color: white;
+            transition: 0.2s;
+            margin: 18px;
+        }
+
+        .btn:hover {
+            background: #005fa3;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div id="datetime"></div>
+
+        <div id="lang-switch">
+            <span data-lang="ru">RU</span> |
+            <span data-lang="de" class="active">DE</span> |
+            <span data-lang="en">EN</span>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="menu">
+            <button class="btn" id="btn1"></button>
+            <button class="btn" id="btn2"></button>
+        </div>
+    </div>
+
+    <script>
+
+        let lang = "de"
+
+        const TEXT = {
+            /*de: {
+                add: "Addition und Subtraktion Trainer",
+                mult: "Multiplikation und Division Trainer"
+            },
+            en: {
+                add: "Addition and Subtraction Trainer",
+                mult: "Multiplication and Division Trainer"
+            },
+            ru: {
+                add: "Тренажёр сложения и вычитания",
+                mult: "Тренажёр умножения и деления"
+            }*/
+            de: {
+                add: "Üben   + und -",
+                mult: "Üben   • und :"
+            },
+            en: {
+                add: "Trainer   + und -",
+                mult: "Trainer   • und :"
+            },
+            ru: {
+                add: "Тренажёр   + и -",
+                mult: "Тренажёр   • и :"
+            }
+        }
+
+        function updateTexts() {
+            document.getElementById("btn1").textContent = TEXT[lang].add
+            document.getElementById("btn2").textContent = TEXT[lang].mult
+        }
+
+        document.querySelectorAll("#lang-switch span").forEach(el => {
+            el.onclick = () => {
+                lang = el.dataset.lang
+
+                document.querySelectorAll("#lang-switch span")
+                    .forEach(x => x.classList.remove("active"))
+
+                el.classList.add("active")
+
+                updateTexts()
+            }
+        })
+
+        function startClock() {
+            const el = document.getElementById("datetime")
+            function tick() {
+                el.textContent = new Date().toLocaleString()
+            }
+            tick()
+            setInterval(tick, 1000)
+        }
+
+        startClock()
+        updateTexts()
+
+        // 👉 сюда потом можно добавить переходы
+        document.getElementById("btn1").onclick = () => {
+            window.location.href = "add.html"
+        }
+
+        document.getElementById("btn2").onclick = () => {
+            window.location.href = "mult.html"
+        }
+
+    </script>
+
+</body>
+
+</html>

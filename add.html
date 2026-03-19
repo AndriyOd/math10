@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тренажёр по математике</title>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        body {
+            font-family: "Segoe UI", sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            font-size: clamp(14px, 1.5vw, 18px);
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #0078d7;
+            color: white;
+            padding: 10px 20px;
+            font-size: clamp(14px, 1.2vw, 18px);
+            flex-wrap: wrap;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        #datetime {
+            margin-right: 15px;
+        }
+
+        #counters {
+            display: flex;
+            gap: 15px;
+            font-weight: bold;
+            font-size: clamp(14px, 1.2vw, 16px);
+        }
+
+        #total-count {
+            color: white;
+        }
+
+        #correct-count {
+            color: #2ee637;
+        }
+
+        #incorrect-count {
+            color: red;
+        }
+
+        #lang-switch {
+            display: flex;
+            gap: 8px;
+            font-weight: bold;
+            font-size: clamp(14px, 1.2vw, 16px);
+            cursor: pointer;
+        }
+
+        #lang-switch span {
+            cursor: pointer;
+            opacity: 0.7;
+        }
+
+        #lang-switch .active {
+            text-decoration: underline;
+            opacity: 1;
+        }
+
+        /* Кнопка "Поделиться" */
+        #share-btn {
+            background-color: #35a8ea;
+            border: none;
+            border-radius: 8px;
+            padding: 6px 12px;
+            font-size: clamp(14px, 1.2vw, 16px);
+            cursor: pointer;
+            color: white;
+            margin-left: 20px;
+        }
+
+        main {
+            max-width: 550px;
+            margin: 30px auto;
+            background-color: white;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #0078d7;
+            font-size: clamp(20px, 2vw, 28px);
+        }
+
+        .example {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 10px;
+            margin: 10px 0;
+            font-size: clamp(16px, 1.6vw, 20px);
+            flex-wrap: wrap;
+        }
+
+        .number {
+            font-size: 0.7em;
+            color: #555;
+            margin-right: 8px;
+            min-width: 20px;
+            text-align: right;
+        }
+
+        .example input {
+            width: 80px;
+            padding: 4px;
+            font-size: clamp(15px, 1.4vw, 18px);
+        }
+
+        .result {
+            font-size: clamp(20px, 2vw, 26px);
+            font-weight: bold;
+        }
+
+        .correct {
+            color: green;
+        }
+
+        .incorrect {
+            color: red;
+        }
+
+        .previous {
+            margin-left: 5px;
+            font-size: clamp(14px, 1.4vw, 16px);
+            color: #888;
+            display: flex;
+            gap: 5px;
+        }
+
+        .wrong {
+            position: relative;
+            display: inline-block;
+            color: #888;
+        }
+
+        .wrong::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 0.75px;
+            background-color: rgba(136, 136, 136, 0.7);
+            transform: rotate(-25deg);
+            transform-origin: center;
+        }
+
+        #check-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #28a745;
+            color: white;
+            font-size: clamp(14px, 1.4vw, 18px);
+            padding: clamp(8px, 1.2vw, 12px);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        #check-btn:hover {
+            background-color: #218838;
+        }
+
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
+        @media (max-width: 600px) {
+            main {
+                width: 90%;
+                padding: 15px 20px;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div id="datetime"></div>
+        <div id="counters">
+            <span data-i18n="total">Всего:</span> <span id="total-count">0</span> |
+            <span data-i18n="correct">Верно:</span> <span id="correct-count">0</span> |
+            <span data-i18n="incorrect">Неверно:</span> <span id="incorrect-count">0</span>
+        </div>
+        <div id="lang-switch">
+            <span data-lang="ru" class="active">RU</span>|
+            <span data-lang="de">DE</span>|
+            <span data-lang="en">EN</span>
+            <button id="share-btn" data-i18n="share">Поделиться</button>
+        </div>
+    </header>
+
+    <main>
+        <h1 data-i18n="title">Тренажёр по сложению и вычитанию</h1>
+        <div id="examples"></div>
+        <button id="check-btn" data-i18n="check">Проверить</button>
+    </main>
+
+    <script>
+        // ==== Скрипт шаринга ====
+        async function shareScreenshot() {
+            try {
+                const clone = document.body.cloneNode(true);
+                const container = document.createElement('div');
+                container.style.position = 'fixed';
+                container.style.top = '0';
+                container.style.left = '0';
+                container.style.width = '100vw';
+                container.style.pointerEvents = 'none';
+                container.style.zIndex = '-9999';
+                container.appendChild(clone);
+                document.body.appendChild(container);
+
+                const width = document.documentElement.scrollWidth;
+                const height = document.documentElement.scrollHeight;
+
+                const canvas = await html2canvas(container, { width, height, windowWidth: width, windowHeight: height });
+                document.body.removeChild(container);
+
+                canvas.toBlob(async (blob) => {
+                    const file = new File([blob], "screenshot.jpg", { type: "image/jpeg" });
+                    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                        await navigator.share({
+                            files: [file],
+                            title: "Скриншот тренажёра",
+                            text: "Смотри, что я сделал!"
+                        });
+                    } else {
+                        alert("Ваш браузер не поддерживает шаринг файлов.");
+                    }
+                }, "image/jpeg", 0.8);
+            } catch (err) {
+                console.error("Ошибка при создании скриншота:", err);
+            }
+        }
+
+        document.getElementById('share-btn').addEventListener('click', shareScreenshot);
+
+        const examplesContainer = document.getElementById('examples');
+        const checkBtn = document.getElementById('check-btn');
+        const datetime = document.getElementById('datetime');
+        const totalCountEl = document.getElementById('total-count');
+        const correctCountEl = document.getElementById('correct-count');
+        const incorrectCountEl = document.getElementById('incorrect-count');
+
+        let totalCount = 0, correctCount = 0, incorrectCount = 0;
+
+        // ==== Мультиязычность ====
+        const translations = {
+            ru: {
+                title: "Тренажёр по сложению и вычитанию",
+                check: "Проверить",
+                total: "Всего:",
+                correct: "Верно:",
+                incorrect: "Неверно:",
+                share: "Поделиться"
+            },
+            de: {
+                title: "Trainer für Addition und Subtraktion",
+                check: "Prüfen",
+                total: "Gesamt:",
+                correct: "Richtig:",
+                incorrect: "Falsch:",
+                share: "Teilen"
+            },
+            en: {
+                title: "Addition and Subtraction Trainer",
+                check: "Check",
+                total: "Total:",
+                correct: "Correct:",
+                incorrect: "Incorrect:",
+                share: "Share"
+            }
+        };
+        let currentLang = 'ru';
+        document.querySelectorAll('#lang-switch span').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                document.querySelectorAll('#lang-switch span').forEach(s => s.classList.remove('active'));
+                btn.classList.add('active');
+                updateLanguage();
+            });
+        });
+        function updateLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.dataset.i18n;
+                el.textContent = translations[currentLang][key];
+            });
+        }
+
+        // ==== Время ====
+        function updateDateTime() {
+            const now = new Date();
+            datetime.textContent = now.toLocaleString(currentLang === 'de' ? 'de-DE' : currentLang === 'en' ? 'en-GB' : 'ru-RU');
+        }
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+
+        // ==== Генератор чисел ====
+        function randomNum(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        // ==== Генерация примеров с "переходом через десяток" ====
+        function createExample() {
+            let a, b, op;
+            while (true) {
+                a = randomNum(0, 100);
+                b = randomNum(0, 100);
+                op = Math.random() < 0.5 ? '+' : '-';
+                if (op === '-') {
+                    if (a < b) [a, b] = [b, a];
+                    if (a % 10 !== 0 && a - b < Math.floor(a / 10) * 10) break; // переход вниз
+                } else {
+                    if (a % 10 !== 0 && (Math.floor(a / 10) < Math.floor((a + b) / 10))) break; // переход вверх
+                }
+            }
+
+            const example = document.createElement('div');
+            example.className = 'example';
+            example.dataset.correct = op === '+' ? (a + b) : (a - b);
+            example.dataset.previous = '[]';
+            const index = examplesContainer.children.length + 1;
+            example.innerHTML = `
+        <span class="number">${index}.</span>
+        <span class="expr">${a} ${op} ${b} = </span>
+        <input type="number" class="answer" />
+        <span class="result"></span>
+        <span class="previous"></span>
+    `;
+            examplesContainer.appendChild(example);
+            totalCount++;
+            updateCounters();
+        }
+
+        function generateExamples(initial = 7) {
+            examplesContainer.innerHTML = '';
+            totalCount = 0; correctCount = 0; incorrectCount = 0;
+            for (let i = 0; i < initial; i++) createExample();
+            addInputHandlers();
+            updateCounters();
+        }
+
+        function addInputHandlers() {
+            const inputs = document.querySelectorAll('.answer');
+            inputs.forEach((input, index) => {
+                input.addEventListener('keydown', (event) => {
+                    if (event.key === 'Enter') {
+                        event.preventDefault();
+                        if (index < inputs.length - 1) inputs[index + 1].focus();
+                    }
+                });
+            });
+            if (inputs.length > 0) inputs[0].focus();
+        }
+
+        function updateCounters() {
+            totalCountEl.textContent = totalCount;
+            correctCountEl.textContent = correctCount;
+            incorrectCountEl.textContent = incorrectCount;
+        }
+
+        function checkAnswers() {
+            const examples = document.querySelectorAll('.example');
+            correctCount = 0;
+            incorrectCount = 0;
+
+            examples.forEach(ex => {
+                const correct = +ex.dataset.correct;
+                const answerField = ex.querySelector('.answer');
+                const resultSpan = ex.querySelector('.result');
+                const prevSpan = ex.querySelector('.previous');
+
+                const userAnswer = answerField.value.trim() === '' ? NaN : +answerField.value;
+                let previousAnswers = JSON.parse(ex.dataset.previous);
+
+                resultSpan.textContent = '';
+                prevSpan.innerHTML = '';
+
+                if (!Number.isNaN(userAnswer) && userAnswer !== correct && !previousAnswers.includes(userAnswer)) {
+                    previousAnswers.push(userAnswer);
+                    createExample();
+                }
+
+                ex.dataset.previous = JSON.stringify(previousAnswers);
+
+                if (userAnswer === correct) {
+                    if (previousAnswers.length > 0) {
+                        resultSpan.innerHTML = `<span class="correct">✔</span> <span class="incorrect">✘</span>`;
+                    } else {
+                        resultSpan.innerHTML = `<span class="correct">✔</span>`;
+                    }
+                } else if (!Number.isNaN(userAnswer)) {
+                    resultSpan.innerHTML = `<span class="incorrect">✘</span>`;
+                }
+
+                prevSpan.innerHTML = previousAnswers.map(ans => `<span class="wrong">${ans}</span>`).join(' ');
+                incorrectCount += previousAnswers.length;
+                if (userAnswer === correct) correctCount++;
+            });
+
+            document.querySelectorAll('.example').forEach((ex, idx) => {
+                ex.querySelector('.number').textContent = (idx + 1) + '.';
+            });
+
+            updateCounters();
+            addInputHandlers();
+        }
+
+        generateExamples();
+        checkBtn.addEventListener('click', checkAnswers);
+    </script>
+</body>
+
+</html>
