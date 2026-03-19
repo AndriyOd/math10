@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>Multiplication Trainer</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+    <style>
+        /*for smartphones*/
+        body {
+            font-family: "Segoe UI", sans-serif;
+            margin: 0;
+            background: #f5f5f5;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0078d7;
+            color: white;
+            padding: 10px 20px;
+        }
+
+        #lang-switch span {
+            cursor: pointer;
+            opacity: .6;
+            font-weight: bold;
+        }
+
+        #lang-switch .active {
+            opacity: 1;
+            text-decoration: underline;
+        }
+
+        #share-btn,
+        #reset-btn {
+            margin-left: 8px;
+            background: #35a8ea;
+            border: none;
+            color: white;
+            padding: 6px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 260px 1fr 300px;
+            gap: 20px;
+            padding: 20px;
+        }
+
+        /*
+        @media(max-width:900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+            */
+
+        @media(max-width:900px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .heatmap {
+                transform: scaleY(0.85);
+                transform-origin: top;
+            }
+
+            .center {
+                transform: scaleY(0.85);
+                transform-origin: top;
+            }
+        }
+
+        .left,
+        .center,
+        .right {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+        }
+
+        .tiles {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .tile {
+            background: #e9f2fb;
+            padding: 14px;
+            text-align: center;
+            font-size: 20px;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .tile.active {
+            background: #0078d7;
+            color: white;
+        }
+
+        .tile.inactive {
+            background: #ccc;
+            color: #666;
+        }
+
+        .start-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            background: #28a745;
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .heatmap {
+            margin-top: 15px;
+            display: grid;
+            grid-template-columns: repeat(11, 1fr);
+            gap: 3px;
+        }
+
+        .heatcell {
+            height: 18px;
+            border-radius: 3px;
+        }
+
+        .example {
+            font-size: 42px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .correctFlash {
+            background: #c6ffd1;
+        }
+
+        .wrongFlash {
+            background: #ffd0d0;
+        }
+
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(4, 70px);
+            gap: 10px;
+        }
+
+        .key {
+            font-size: 22px;
+            border: none;
+            border-radius: 10px;
+            background: #e9f2fb;
+            cursor: pointer;
+        }
+
+        .enter {
+            grid-row: 1/5;
+            grid-column: 4;
+            background: #0078d7;
+            color: white;
+            font-size: 26px;
+        }
+
+        .zero {
+            grid-column: 1/3;
+        }
+
+        .backspace {
+            grid-column: 3;
+        }
+
+        .stat-green {
+            color: rgb(0, 128, 0);
+            font-weight: bold;
+        }
+
+        .stat-red {
+            color: #ab133b;
+            font-weight: bold;
+        }
+
+        #queue {
+            margin-top: 10px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-size: 0.75em;
+        }
+
+        #queue span.box {
+            color: black;
+            padding: 0 4px;
+            border-radius: 3px;
+            margin-left: 5px;
+        }
+
+        #stat_total,
+        #stat_correct,
+        #stat_streak,
+        #stat_wrong {
+            font-size: 0.75em;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div id="datetime"></div>
+
+        <div id="lang-switch">
+            <span data-lang="ru" class="active">RU</span> |
+            <span data-lang="de">DE</span> |
+            <span data-lang="en">EN</span>
+            <button id="share-btn"></button>
+            <button id="reset-btn"></button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div class="left">
+            <div class="tiles" id="tiles"></div>
+            <button class="start-btn" id="startBtn"></button>
+            <div class="heatmap" id="heatmap"></div>
+        </div>
+
+        <div class="center">
+            <div class="example" id="example"></div>
+
+            <div class="keypad">
+                <button class="key">1</button>
+                <button class="key">2</button>
+                <button class="key">3</button>
+                <button class="key">4</button>
+                <button class="key">5</button>
+                <button class="key">6</button>
+                <button class="key">7</button>
+                <button class="key">8</button>
+                <button class="key">9</button>
+                <button class="key zero">0</button>
+                <button class="key backspace">←</button>
+                <button class="key enter">Enter</button>
+            </div>
+        </div>
+
+        <div class="right">
+
+            <div id="stat_total"></div>
+            <div id="stat_correct"></div>
+            <div id="stat_streak"></div>
+            <div id="stat_wrong"></div>
+
+            <div id="queue"></div>
+
+        </div>
+    </div>
+
+    <script>
+
+        const RESET_PASSWORD = "1324"
+
+        const INTERVALS = {
+            0: 0,
+            1: 2,
+            2: 5,
+            3: 10,
+            4: 20,
+            5: 40,
+            6: 9999
+        }
+
+        let lang = "ru"
+        let active = []
+        let cards = {}
+        let step = 0
+        let current = null
+        let lastKey = null
+        let userAnswer = ""
+
+        let total = 0
+        let correct = 0
+        let wrong = 0
+        let streak = 0
+
+        const colors = {
+            0: "#eeeeee",
+            1: "#fc7979",
+            2: "#ffd6d6",
+            3: "#ffe6cc",
+            4: "#fff5cc",
+            5: "#e6ffe6",
+            6: "#91ffaf"
+        }
+
+        const TEXT = {
+            ru: { start: "Начать", share: "Поделиться", reset: "Сброс статистики", total: "Всего примеров", correct: "Верных", wrong: "Неверных", streak: "Верных подряд" },
+            en: { start: "Start", share: "Share", reset: "Reset", total: "Total", correct: "Correct", wrong: "Wrong", streak: "Streak" },
+            de: { start: "Start", share: "Teilen", reset: "Reset", total: "Gesamt", correct: "Richtig", wrong: "Falsch", streak: "Serie" }
+        }
+
+        function INIT() {
+            initLanguage()
+            initTiles()
+            loadCards()
+            buildHeatmap()
+            initKeypad()
+            initButtons()
+            updateStats()
+            startClock()
+        }
+
+        function startClock() {
+            const el = document.getElementById("datetime")
+            function tick() { el.textContent = new Date().toLocaleString() }
+            tick()
+            setInterval(tick, 1000)
+        }
+
+        function initLanguage() {
+
+            const startBtn = document.getElementById("startBtn")
+            const shareBtn = document.getElementById("share-btn")
+            const resetBtn = document.getElementById("reset-btn")
+
+            function apply() {
+                startBtn.textContent = TEXT[lang].start
+                shareBtn.textContent = TEXT[lang].share
+                resetBtn.textContent = TEXT[lang].reset
+                updateStats()
+            }
+
+            document.querySelectorAll("#lang-switch span").forEach(el => {
+                el.onclick = () => {
+                    lang = el.dataset.lang
+                    document.querySelectorAll("#lang-switch span").forEach(x => x.classList.remove("active"))
+                    el.classList.add("active")
+                    apply()
+                }
+            })
+
+            apply()
+        }
+
+        function initTiles() {
+            const tiles = document.getElementById("tiles")
+
+            for (let i = 2; i <= 10; i++) {
+
+                const tile = document.createElement("div")
+                tile.className = "tile active"
+                tile.textContent = i
+                active.push(i)
+
+                tile.onclick = () => {
+                    if (active.includes(i)) {
+                        active = active.filter(x => x !== i)
+                        tile.classList.remove("active")
+                        tile.classList.add("inactive")
+                    } else {
+                        active.push(i)
+                        tile.classList.remove("inactive")
+                        tile.classList.add("active")
+                    }
+                }
+
+                tiles.appendChild(tile)
+            }
+        }
+
+        function loadCards() {
+            cards = JSON.parse(localStorage.getItem("cards") || "{}")
+        }
+
+        function save() {
+            localStorage.setItem("cards", JSON.stringify(cards))
+        }
+
+        function getCard(key) {
+            if (!cards[key]) cards[key] = { box: 0, due: 0 }
+            return cards[key]
+        }
+
+        function buildHeatmap() {
+
+            const heatmap = document.getElementById("heatmap")
+            heatmap.innerHTML = ""
+
+            heatmap.appendChild(document.createElement("div"))
+
+            for (let i = 1; i <= 10; i++) {
+                const h = document.createElement("div")
+                h.textContent = i
+                heatmap.appendChild(h)
+            }
+
+            for (let a = 2; a <= 10; a++) {
+
+                const row = document.createElement("div")
+                row.textContent = a
+                heatmap.appendChild(row)
+
+                for (let b = 1; b <= 10; b++) {
+
+                    const key = `${a}x${b}`
+                    const card = getCard(key)
+
+                    const cell = document.createElement("div")
+                    cell.className = "heatcell"
+                    cell.style.background = colors[card.box]
+
+                    heatmap.appendChild(cell)
+                }
+            }
+        }
+
+        function weightedChoice(pool) {
+
+            const weighted = []
+
+            pool.forEach(item => {
+                const card = getCard(item.key)
+                const weight = 8 - card.box
+
+                for (let i = 0; i < weight; i++) {
+                    weighted.push(item)
+                }
+            })
+
+            return weighted[Math.floor(Math.random() * weighted.length)]
+        }
+
+        function newExample() {
+
+            step++
+
+            let pool = []
+            let fallback = []
+
+            active.forEach(a => {
+                for (let b = 1; b <= 10; b++) {
+
+                    const key = `${a}x${b}`
+                    const card = getCard(key)
+
+                    if (card.box < 6) {
+
+                        if (card.due <= step) {
+                            pool.push({ a, b, key })
+                        }
+
+                        fallback.push({ a, b, key })
+                    }
+                }
+            })
+
+            if (!pool.length) pool = fallback
+
+            let card
+
+            do {
+                card = weightedChoice(pool)
+            } while (card.key === lastKey && pool.length > 1)
+
+            lastKey = card.key
+
+            const a = card.a
+            const b = card.b
+            const product = a * b
+
+            const r = Math.random()
+
+            /*
+            if (r < 0.7) {
+                current = { text: `${a} • ${b} = `, answer: product, key: card.key }
+            } else if (r < 0.85) {
+                current = { text: `${product} : ${a} = `, answer: b, key: card.key }
+            } else {
+                current = { text: `${product} : ${b} = `, answer: a, key: card.key }
+            }
+            */
+
+            if (r < 0.6) {
+                current = { text: `${a} • ${b} = `, answer: product, key: card.key }
+            } else {
+                current = { text: `${product} : ${a} = `, answer: b, key: card.key }
+            }
+
+            userAnswer = ""
+            document.getElementById("example").textContent = current.text
+            updateQueue()
+        }
+
+        function updateQueue() {
+
+            const queue = document.getElementById("queue")
+            queue.innerHTML = ""
+
+            active.forEach(a => {
+                for (let b = 1; b <= 10; b++) {
+
+                    const key = `${a}x${b}`
+                    const card = getCard(key)
+
+                    const div = document.createElement("div")
+                    div.textContent = `${a}×${b} → `
+
+                    const span = document.createElement("span")
+                    span.className = "box"
+                    span.textContent = `Box ${card.box}`
+                    span.style.background = colors[card.box]
+
+                    div.appendChild(span)
+
+                    queue.appendChild(div)
+                }
+            })
+        }
+
+        function initKeypad() {
+
+            document.querySelectorAll(".key").forEach(k => {
+
+                k.onclick = () => {
+
+                    const v = k.textContent
+
+                    if (v === "Enter") {
+                        check()
+                    }
+                    else if (v === "←") {
+                        userAnswer = userAnswer.slice(0, -1)
+                    }
+                    else {
+                        userAnswer += v
+                    }
+
+                    updateExample()
+                }
+            })
+        }
+
+        function updateExample() {
+            if (current)
+                document.getElementById("example").textContent = current.text + userAnswer
+        }
+
+        function check() {
+
+            if (!current) return
+
+            const val = parseInt(userAnswer)
+            if (isNaN(val)) return
+
+            total++
+
+            const card = getCard(current.key)
+
+            if (val === current.answer) {
+
+                correct++
+                streak++
+
+                if (card.box === 0) {
+                    card.box = 3
+                }
+                else if (card.box === 1) {
+                    card.box = 2
+                }
+                else {
+                    card.box = Math.min(card.box + 1, 6)
+                }
+
+                card.due = step + INTERVALS[card.box]
+
+                save()
+                buildHeatmap()
+                flash("correctFlash")
+                updateStats()
+
+                setTimeout(newExample, 700)
+
+            } else {
+
+                wrong++
+                streak = 0
+
+                card.box = 1
+                card.due = step + INTERVALS[card.box]
+
+                save()
+                buildHeatmap()
+                flash("wrongFlash")
+
+                userAnswer = ""
+                updateExample()
+            }
+        }
+
+        function flash(cls) {
+            const el = document.getElementById("example")
+            el.classList.add(cls)
+            setTimeout(() => el.classList.remove(cls), 500)
+        }
+
+        function updateStats() {
+
+            document.getElementById("stat_total").innerHTML = `${TEXT[lang].total}: <b>${total}</b>`
+            document.getElementById("stat_correct").innerHTML = `${TEXT[lang].correct}: <b class="stat-green">${correct}</b>`
+            document.getElementById("stat_streak").innerHTML = `${TEXT[lang].streak}: <b class="stat-green">${streak}</b>`
+            document.getElementById("stat_wrong").innerHTML = `${TEXT[lang].wrong}: <b class="stat-red">${wrong}</b>`
+        }
+
+        function initButtons() {
+
+            document.getElementById("startBtn").onclick = newExample
+
+            document.getElementById("reset-btn").onclick = () => {
+
+                const pass = prompt("Password")
+                if (pass !== RESET_PASSWORD) return
+
+                const input = prompt("Введите число 2–10 для сброса строки или 200 для полного сброса")
+
+                if (!input) return
+
+                const num = parseInt(input)
+
+                if (num === 200) {
+
+                    cards = {}
+                    save()
+
+                    total = 0
+                    correct = 0
+                    wrong = 0
+                    streak = 0
+                    step = 0
+
+                }
+                else if (num >= 2 && num <= 10) {
+
+                    for (let b = 1; b <= 10; b++) {
+
+                        const key = `${num}x${b}`
+
+                        if (cards[key]) {
+                            cards[key].box = 0
+                            cards[key].due = 0
+                        }
+                    }
+
+                    save()
+                }
+                else {
+                    return
+                }
+
+                updateStats()
+                buildHeatmap()
+                updateQueue()
+            }
+
+            document.getElementById("share-btn").onclick = async () => {
+
+                const canvas = await html2canvas(document.body)
+
+                canvas.toBlob(async blob => {
+
+                    const file = new File([blob], "trainer.jpg", { type: "image/jpeg" })
+
+                    if (navigator.canShare && navigator.canShare({ files: [file] }))
+                        await navigator.share({ files: [file] })
+
+                })
+            }
+        }
+
+        INIT()
+
+    </script>
+
+</body>
+
+</html>
